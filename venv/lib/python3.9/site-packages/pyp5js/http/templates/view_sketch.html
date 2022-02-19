@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ sketch_name }}{% endblock title %}
+
+{% block extra_head %}
+    <style>
+        html {
+          overflow-y: scroll;
+          overflow-x: scroll;
+        }
+
+        .demoContainer {
+          display: flex;
+          align-items: center;
+        }
+
+        pre {
+          margin-right: 2em;
+        }
+
+        .text-editor-box {
+          margin: 0 1.5em;
+          max-width: 800px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+        }
+
+        #text-editor {
+          float: left;
+          margin: 0.5em 0;
+          height: 800px;
+         }
+
+        .text-editor {
+          width: 700px;
+          transition-property: width;
+          transition: 500ms ease-out;
+        }
+
+        #sketch-buttons {
+          width: 100%;
+          min-width: 250px;
+          display: flex;
+          justify-content: space-between;
+          align-self: flex-start;
+        }
+
+        .left-buttons {
+          width: 100%;
+        }
+
+        .hidden-editor {
+          opacity: 0.2;
+          width: 250px;
+          transition-property: width;
+          transition: 500ms ease-in;
+        }
+
+        .code-container {
+          display: flex;
+          align-items: flex-start;
+          justify-content: flex-start;
+        }
+
+    </style>
+
+    <script src="/static/js/p5/p5.js"></script>
+    {% if live_run %}
+      <script src="/static/js/pyodide/pyodide_v0.18.1.js"></script>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="demoContainer">
+
+      <div style="display: block">
+        <a href="/">Back to sketchbook</a>
+        <form action="." method="POST">
+          <textarea class="display-none" id="id_py_code" name="py_code">{{ py_code }}</textarea>
+          <div class="code-container">
+            <div class="text-editor-box">
+              <button id="collapseBtn" title="Collapse the code editor" type="button"
+                class="btn btn-primary bg-orange rounded py1 px2 pb3">
+                Collapse</button>
+              <div id="text-editor" class="text-editor">{{ py_code }}</div>
+              <div id="sketch-buttons" class="clearfix">
+                {% if live_run %}
+                <div class="left-buttons">
+                  <button id="executeBtn" title="(Ctrl/Cmd + Enter) to refresh the skecth" type="button"
+                    class="btn btn-primary bg-green rounded py1 px2 mb1">Update</button>
+                  <button id="clearBtn" title="(Ctrl/Cmd + .) to clear the skecth" type="button"
+                    class="btn btn-primary rounded bg-red py1 px2 mb1">Clear</button>
+                </div>
+                {% endif %}
+                <input id="submitBtn" title="(Ctrl/Cmd + s) to save the sketch" class="btn btn-primary rounded py1 px2 mb1"
+                  type="submit" value="Save">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div id="sketch-holder">
+        <!-- You sketch will go here! -->
+      </div>
+    </div>
+{% endblock content %}
+
+{% block custom_js %}
+    <script src="/static/js/ace/ace.js"></script>
+
+    <script type="text/javascript">
+        var editor = ace.edit("text-editor");
+
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/python");
+        editor.setFontSize(16);
+        editor.session.setOptions({
+          tabSize: 4,
+        });
+
+        editor.session.on('change', function(){
+          document.getElementById("id_py_code").innerHTML = editor.getSession().getValue();
+        });
+    </script>
+
+    <script src="{{ sketch_js_url }}" {% if js_as_module %}type="module"{% endif %}></script>
+
+    <script type="text/javascript">
+      document.addEventListener("DOMContentLoaded", () => {
+        const submitBtn = document.getElementById("submitBtn");
+        const executeBtn = document.getElementById("executeBtn");
+        const clearBtn = document.getElementById("clearBtn");
+
+        executeBtn.addEventListener("click", () => {
+          const code = editor.getSession().getValue();
+          window.runSketchCode(code);
+        });
+
+        const collapseBtn = document.getElementById("collapseBtn");
+        collapseBtn.addEventListener("click", () => {
+          const textEditorEl = document.getElementById("text-editor");
+          textEditorEl.classList.toggle("hidden-editor");
+          collapseBtn.textContent = (collapseBtn.textContent.includes("Collapse")) ? "Expand" : "Collapse";
+        })
+
+        clearBtn.addEventListener("click", () => {
+          document.getElementById("sketch-holder").innerHTML = "";
+        });
+
+        document.body.addEventListener("keydown", keyDown);
+
+        function cleanKeyCode(e) {
+          // Shortcuts work for Ctrl or Cmd
+          if (e.ctrlKey || e.metaKey) {
+            return e.keyCode;
+          }
+        }
+
+        function keyDown(e){
+            if(cleanKeyCode(e) === 83){  // Ctrl + s to save
+              e.preventDefault();
+              submitBtn.click();
+            {% if live_run %}
+            } else if (cleanKeyCode(e) === 13) {  // Ctrl + Enter to run
+              e.preventDefault();
+              executeBtn.click();
+            } else if(cleanKeyCode(e) === 190){  // Ctrl + . to clear
+              e.preventDefault();
+              clearBtn.click();
+            {% endif %}
+            }
+        }
+      });
+    </script>
+
+{% endblock %}

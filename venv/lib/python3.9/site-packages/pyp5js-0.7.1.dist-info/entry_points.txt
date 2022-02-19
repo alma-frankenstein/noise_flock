@@ -1,0 +1,3 @@
+[console_scripts]
+pyp5js = pyp5js.cli:command_line_entrypoint
+
