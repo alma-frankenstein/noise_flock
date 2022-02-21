@@ -1,19 +1,22 @@
 
 
-let flock;
+let flockArray = {};
 // let attackTime = 0.001;
 // let decayTime = 0.2;
 // let susPercent = 0.2;
 // let releaseTime = 0.5;
-// let mySynth =[];
+let synthArray = [];
 
 // let env, triOsc;
+// let synth;setup
 
 function setup() {
   createCanvas(640, 360);
   createP("Drag the mouse to generate new boids.");
+  frameRate(30);
   
-  // osc = new p5.Oscillator('sine');
+  // synth = new p5.Oscillator('sine', 440);
+
   // env = new p5.Envelope();
   flock = new Flock();
   // Add an initial set of boids into the system
@@ -21,6 +24,8 @@ function setup() {
     let b = new Boid(width / 2,height / 2);
     flock.addBoid(b);
   }
+
+
 }
 
 function draw() {
@@ -45,6 +50,8 @@ function Flock() {
   this.boids = []; // Initialize the array
 }
 
+
+
 Flock.prototype.run = function() {
   for (let i = 0; i < this.boids.length; i++) {
     this.boids[i].run(this.boids);  // Passing the entire list of boids to each boid individually
@@ -53,6 +60,9 @@ Flock.prototype.run = function() {
 
 Flock.prototype.addBoid = function(b) {
   this.boids.push(b);
+  let newSynth = new p5.Oscillator('sine', 440);
+  synthArray.push(newSynth);
+  newSynth.start();
 }
 
 // The Nature of Code
@@ -62,17 +72,23 @@ Flock.prototype.addBoid = function(b) {
 // Boid class
 // Methods for Separation, Cohesion, Alignment added
 
-// class MySynth {
-//   constructor() {
-//     this.osc = new p5.Oscillator(264);
-//   }
-// }
-// // class Car {
-//   constructor(name, year) {
-//     this.name = name;
-//     this.year = year;
-//   }
-// }
+
+// *********************
+function makeFlock() {
+  acceleration = createVector(0, 0);
+  velocity = createVector(random(-1, 1), random(-1, 1));
+  position = createVector(0, 0);
+  synth = new p5.Oscillator(440)
+
+  for (let i = 0; i < 2; i++) {
+    flockArray[i] = {'acceleration' : acceleration, 'velocity' : velocity, 'position' : position,
+    'r' : 3, 'maxspeed' : 3, 'maxforce' : 0.05, 'synth' : synth};
+
+    flockArray[i]['synth'].start();
+  }
+
+}
+
 
 function Boid(x, y) {
   this.acceleration = createVector(0, 0);
@@ -81,9 +97,10 @@ function Boid(x, y) {
   this.r = 3.0;
   this.maxspeed = 3;    // Maximum speed
   this.maxforce = 0.05; // Maximum steering force
-  this.synth = new p5.Oscillator(264)
+  // this.synth = new p5.Oscillator(440)
   // this.freq = 264;
   // this.env = new p5.Envelope();
+  // this.synth.start();
 }
 
 Boid.prototype.run = function(boids) {
@@ -92,7 +109,7 @@ Boid.prototype.run = function(boids) {
   this.borders();
   this.render();
   // this.osc.amp(this.env)
-  this.synth.start();
+  makeFlock();
 }
 
 Boid.prototype.applyForce = function(force) {
@@ -125,9 +142,10 @@ Boid.prototype.update = function() {
   // Reset accelertion to 0 each cycle
   this.acceleration.mult(0);
   
-  let currentFreq = this.synth.getFreq();
-  let newFreq = random(currentFreq) + random(-10, 10); 
-  this.synth.freq(newFreq);
+  // let currentFreq = this.synth.getFreq();
+  // let newFreq = random(currentFreq) + random(-10, 10); 
+  // this.synth.freq(newFreq);
+  
 }
 
 // A method that calculates and applies a steering force towards a target
@@ -248,4 +266,7 @@ Boid.prototype.cohesion = function(boids) {
   }
 }
 
-
+console.log("flock array");
+console.log(flockArray);
+console.log("synth array");
+console.log(synthArray);
